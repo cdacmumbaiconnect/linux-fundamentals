@@ -645,6 +645,7 @@ var STAGES=[
   {t:"Move and make",d:"Find your way, create files, edit them",c:"--s1"},
   {t:"Command power",d:"How commands work, pipes, and file management",c:"--s2"},
   {t:"Processes and permissions",d:"Keep the server healthy and protect files",c:"--s3"},
+  {t:"Output, compare and archive",d:"Redirection, comparing files and packing folders",c:"--s1"},
   {t:"Users and access",d:"Accounts, groups, ownership, ACL and sudo",c:"--s0"},
   {t:"Links and text processing",d:"Inodes and links, then sort, uniq, cut and awk",c:"--s2"}
 ];
@@ -2733,11 +2734,12 @@ var A4=A1.concat(["sudo","exit","man"]);
 var A5=A4.concat(["mkdir","touch","tree","apt"]);
 var A6=A5.concat(["vi","nano"]);
 var A7=["pwd","whoami","ls","cd","cat","echo","type","which","alias","history","clear","help","man"];
-var A8=A7.concat(["mkdir","touch","wc","grep","head","tail","cmp","diff"]);
-var A9=A8.concat(["cp","mv","rm","rmdir","find","tar","zip","unzip","du"]);
+var A8=A7.concat(["mkdir","touch","wc","grep","head","tail"]);
+var A9=A8.concat(["cp","mv","rm","rmdir","find","du"]);
+var AC=A9.concat(["cmp","diff","tar","zip","unzip"]);
 var AP=A9.concat(["ps","top","sleep","jobs","bg","fg","kill","df","free"]);
 var A11=A9.concat(["chmod","umask"]);
-var A12=A9.concat(["chmod","sudo","exit","adduser","useradd","userdel","groupadd","groupdel","usermod","gpasswd","getent","id","groups","su","passwd"]);
+var A12=AC.concat(["chmod","sudo","exit","adduser","useradd","userdel","groupadd","groupdel","usermod","gpasswd","getent","id","groups","su","passwd"]);
 var A13=A12.concat(["chown","chgrp","setfacl","getfacl","tee"]);
 var A14=A13.concat(["ln"]);
 var A15=A14.concat(["sort","uniq","cut","awk"]);
