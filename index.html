@@ -573,17 +573,22 @@ a.btn{display:inline-block}
 .tryintro .uses{margin-top:10px;font-size:14.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .tryintro .uses span{background:#fff;border:1px solid var(--line);border-radius:14px;padding:2px 10px;font-size:13.5px;color:var(--ink)}
 
+.xpbanner{background:#f1ecfa;border:1px dashed #5b3d99;color:#3a2a66;border-radius:12px;padding:12px 16px;margin-bottom:18px;font-size:16px}
+.xpnote{margin:14px 0 0;color:var(--muted);font-size:16px}
+.rail button.xp i{border-style:dashed}
+.rail button.xp span{font-style:italic}
+
 </style>
 </head>
 <body><div id="app"><header class="top"><a class="brand" href="index.html"><b>$_</b>Linux Fundamentals</a><span class="sp"></span></header>
 <main id="view"><div class="page"><div class="pagehead"><h1>Linux Fundamentals</h1><p>Course notes, practice terminals and quizzes. Each day's notes open after that day's session. Days marked with a password open with the password given in class.</p></div>
-<div class="days"><a class="dayc lock" id="dc1" href="day1.html" data-file="day1.html"><div class="n">Day 1</div><h2>Meet Linux and the command line</h2><ul><li>Module 1: What is Linux?</li><li>Module 2: How Linux Works</li><li>Module 3: Finding Your Way</li><li>Module 4: Creating Files and Folders</li><li>Module 5: Editing with vi and nano</li></ul><div class="st">Checking…</div></a><a class="dayc lock" id="dc2" href="day2.html" data-file="day2.html"><div class="n">Day 2</div><h2>Commands, wildcards, pipes and file management</h2><ul><li>Module 6: How Commands Work</li><li>Module 7: Wildcards and Pipes</li><li>Module 8: Copy, Move, Delete and Find</li></ul><div class="st">Checking…</div></a><a class="dayc lock" id="dc3" href="day3.html" data-file="day3.html"><div class="n">Day 3</div><h2>Processes, permissions, redirection, archives, users, links and text processing</h2><ul><li>Module 9: Processes and System Health</li><li>Module 10: File Permissions</li><li>Module 11: Redirection</li><li>Module 12: Compare and Archive</li><li>Module 13: Users and Groups</li><li>Module 14: Ownership, ACL and sudo</li><li>Module 15: Hard and Symbolic Links</li><li>Module 16: Text Processing: sort, uniq, cut, awk</li></ul><div class="st">Checking…</div></a></div>
+<div class="days"><a class="dayc lock" id="dc1" href="day1.html" data-file="day1.html"><div class="n">Day 1</div><h2>Meet Linux and the command line</h2><ul><li>Module 1: What is Linux?</li><li>Module 2: How Linux Works</li><li>Module 3: Finding Your Way</li><li>Module 4: Creating Files and Folders</li><li>Module 5: Editing with vi and nano</li></ul><div class="st">Checking…</div></a><a class="dayc lock" id="dc2" href="day2.html" data-file="day2.html"><div class="n">Day 2</div><h2>Commands, wildcards and pipes</h2><ul><li>Module 6: How Commands Work</li><li>Module 7: Wildcards and Pipes</li></ul><div class="st">Checking…</div></a><a class="dayc lock" id="dc3" href="day3.html" data-file="day3.html"><div class="n">Day 3</div><h2>Files, processes, redirection, archives and text processing</h2><ul><li>Module 8: Copy, Move, Delete and Find</li><li>Module 9: Processes and System Health</li><li>Module 10: Redirection</li><li>Module 11: Compare and Archive</li><li>Module 12: Text Processing: sort and uniq</li></ul><div class="st">Checking…</div></a><a class="dayc lock" id="dc4" href="day4.html" data-file="day4.html"><div class="n">Day 4</div><h2>Permissions, links, users, ownership and sudo</h2><ul><li>Module 13: File Permissions</li><li>Module 14: Hard and Symbolic Links</li><li>Module 15: Users and Groups</li><li>Module 16: Ownership, ACL and sudo</li></ul><div class="st">Checking…</div></a></div>
 <p style="margin-top:28px;color:var(--muted);font-size:14.5px">Everything runs in your browser. Your progress is saved on this device only.</p></div></main></div>
 <script>
-window.PROTECTED=[2,3]; /* days protected with a password (StatiCrypt) */
+window.PROTECTED=[2,3,4]; /* days protected with a password (StatiCrypt) */
 (function(){
   var local=location.protocol==="file:";
-  [1,2,3].forEach(function(d){
+  [1,2,3,4].forEach(function(d){
     var c=document.getElementById("dc"+d),st=c.querySelector(".st");
     var pw=(window.PROTECTED||[]).indexOf(d)>-1;
     function open(){c.classList.remove("lock");c.classList.add("open");st.textContent=pw?"Password from class needed \u2192":"Open the notes \u2192";}

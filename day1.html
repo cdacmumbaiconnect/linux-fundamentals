@@ -573,6 +573,11 @@ a.btn{display:inline-block}
 .tryintro .uses{margin-top:10px;font-size:14.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .tryintro .uses span{background:#fff;border:1px solid var(--line);border-radius:14px;padding:2px 10px;font-size:13.5px;color:var(--ink)}
 
+.xpbanner{background:#f1ecfa;border:1px dashed #5b3d99;color:#3a2a66;border-radius:12px;padding:12px 16px;margin-bottom:18px;font-size:16px}
+.xpnote{margin:14px 0 0;color:var(--muted);font-size:16px}
+.rail button.xp i{border-style:dashed}
+.rail button.xp span{font-style:italic}
+
 </style>
 </head>
 <body>
@@ -628,7 +633,8 @@ function idea(h,p,vis,lay){return {k:"idea",h:h,p:p,vis:vis,lay:lay};}
 function cmd(h,o){o.k="cmd";o.h=h;return o;}
 function pred(h,code,q,a){return {k:"pred",h:h,code:code,q:q,a:a,tag:"Predict"};}
 function vs(h,cols,p){return {k:"vs",h:h,cols:cols,p:p};}
-function tryit(id,p){return {k:"try",id:id,p:p,h:"Your turn",tag:"Your turn"};}
+function tryit(id,p,opt){return opt?{k:"try",id:id,p:p,h:"Explore it yourself",tag:"Explore: try it",opt:true}:{k:"try",id:id,p:p,h:"Your turn",tag:"Your turn"};}
+function more(h,o){o.k="more";o.h=h;o.tag="Explore: "+h.replace(/<[^>]+>/g,"");return o;}
 function check(n){return {k:"check",n:n||3,h:"Quick check",tag:"Quick check"};}
 function traps(rows){return {k:"trap",rows:rows,h:"Watch out",tag:"Watch out"};}
 function recap(pts,cmds){return {k:"recap",pts:pts,cmds:cmds,h:"Recap",tag:"Recap"};}
@@ -643,11 +649,12 @@ var CAST={
 var STAGES=[
   {t:"Meet Linux",d:"What Linux is and how it is organised",c:"--s0"},
   {t:"Move and make",d:"Find your way, create files, edit them",c:"--s1"},
-  {t:"Command power",d:"How commands work, pipes, and file management",c:"--s2"},
-  {t:"Processes and permissions",d:"Keep the server healthy and protect files",c:"--s3"},
+  {t:"Command power",d:"How commands work, wildcards and pipes",c:"--s2"},
+  {t:"Files and processes",d:"Copy, move, delete and find files; keep the server healthy",c:"--s3"},
   {t:"Output, compare and archive",d:"Redirection, comparing files and packing folders",c:"--s1"},
-  {t:"Users and access",d:"Accounts, groups, ownership, ACL and sudo",c:"--s0"},
-  {t:"Links and text processing",d:"Inodes and links, then sort, uniq, cut and awk",c:"--s2"}
+  {t:"Text processing",d:"Sort, count and rank lines of text",c:"--s2"},
+  {t:"Permissions and links",d:"Who may do what to a file, and files with more than one name",c:"--s3"},
+  {t:"Users and access",d:"Accounts, groups, ownership, ACL and sudo",c:"--s0"}
 ];
 var DAY=window.__DAY__||1,QCOUNT=window.__QCOUNT__||0;
 var LESSONS=[];
@@ -830,14 +837,16 @@ steps:[
 ]});
 
 /* ================= rendering ================= */
-var KIND={story:["Story","#1b2330"],idea:["Concept","#1f4f8f"],cmd:["Command","#0f6e6a"],pred:["Predict","#9a5a0b"],vs:["Compare","#5b3d99"],try:["Practice","#1a7a45"],check:["Quick check","#9a5a0b"],trap:["Watch out","#b3261e"],recap:["Recap","#1b2330"],wid:["Explore","#5b3d99"]};
+var KIND={story:["Story","#1b2330"],idea:["Concept","#1f4f8f"],cmd:["Command","#0f6e6a"],pred:["Predict","#9a5a0b"],vs:["Compare","#5b3d99"],try:["Practice","#1a7a45"],check:["Quick check","#9a5a0b"],trap:["Watch out","#b3261e"],recap:["Recap","#1b2330"],wid:["Explore","#5b3d99"],more:["Explore · optional","#5b3d99"]};
+function kindOf(s){return s.opt?["Explore · optional practice","#5b3d99"]:KIND[s.k];}
+function mainN(L){for(var i=0;i<L.steps.length;i++){if(L.steps[i].k==="recap") return i+1;}return L.steps.length;}
 function sc(L){return "var("+STAGES[L.stage].c+")";}
 function scs(L){return "var("+STAGES[L.stage].c+"s)";}
 var SEEN=store.get("lf3-seen",{});
-function seenN(L){return (SEEN[L.id]||[]).length;}
+function seenN(L){var n=mainN(L);return (SEEN[L.id]||[]).filter(function(i){return i<n;}).length;}
 
 function stepHTML(s,L,i){
-  var k=KIND[s.k],h='<div class="kind" style="color:'+k[1]+'">'+k[0]+'</div>';
+  var k=kindOf(s),h='<div class="kind" style="color:'+k[1]+'">'+k[0]+'</div>';
   if(s.k==="story"){
     var c=CAST[s.who];
     return h+'<div class="story"><div><div class="who"><span class="av '+s.who+'">'+s.who+'</span><div><b>'+c.n+'</b><small>'+c.r+'</small></div></div><div class="bubble">'+s.say+'</div></div>'+
@@ -847,12 +856,14 @@ function stepHTML(s,L,i){
     if(s.lay==="two") return h+'<div class="two"><div><h2>'+s.h+'</h2><p class="lead">'+s.p+'</p></div><div>'+s.vis+'</div></div>';
     return h+'<h2>'+s.h+'</h2>'+(s.p?'<p class="lead">'+s.p+'</p>':'')+'<div style="margin-top:16px">'+s.vis+'</div>';
   }
-  if(s.k==="cmd"){
+  if(s.k==="cmd"||s.k==="more"){
     var left='<h2>'+s.h+'</h2>';
     if(s.syn) left+='<div class="syn">'+s.syn.map(function(x){return '<span class="'+x[1]+'">'+esc(x[0])+'</span>';}).join("")+'</div><div class="legend"><span><i style="background:#1f4f8f"></i>command</span><span><i style="background:#0f6e6a"></i>option</span><span><i style="background:#9a5a0b"></i>argument</span></div>';
     if(s.p) left+='<p>'+s.p+'</p>';
     if(s.rows) left+='<div class="crows">'+s.rows.map(function(r){return '<div class="crow"><code>'+esc(r[0])+'</code><span>'+r[1]+'</span></div>';}).join("")+'</div>';
+    if(s.vis) left+='<div style="margin-top:14px">'+s.vis+'</div>';
     if(s.opts) left+='<div class="opts">'+s.opts.map(function(r){return '<div><code>'+esc(r[0])+'</code>'+r[1]+'</div>';}).join("")+'</div>';
+    if(s.k==="more"&&L.steps[i-1]&&L.steps[i-1].k==="recap") h='<div class="xpbanner"><b>Explore on your own (optional).</b> The labs, quiz and quick checks do not depend on anything in this section. Skip it, or come back to it later.</div>'+h;
     return h+(s.out?'<div class="two"><div>'+left+'</div><div><div class="kind" style="color:var(--muted);margin-top:6px">What you see</div>'+V.term(s.out)+'</div></div>':left);
   }
   if(s.k==="pred"){
@@ -867,10 +878,10 @@ function stepHTML(s,L,i){
   }
   if(s.k==="try"){
     var from=0,j;for(j=i-1;j>=0;j--){if(L.steps[j].k==="try"){from=j+1;break;}}
-    var uses=L.steps.slice(from,i).filter(function(x){return x.k==="cmd"||x.k==="wid"||(x.k==="vs"&&x.cols.some(function(c){return c.ex;}));}).map(function(x){return '<span>'+x.h.replace(/<[^>]+>/g,"")+'</span>';});
+    var uses=L.steps.slice(from,i).filter(function(x){return x.k==="cmd"||x.k==="more"||x.k==="wid"||(x.k==="vs"&&x.cols.some(function(c){return c.ex;}));}).map(function(x){return '<span>'+x.h.replace(/<[^>]+>/g,"")+'</span>';});
     if(from===0&&L.n>1) uses.push('<span>earlier modules</span>');
-    return h+'<div class="tryintro"><div><h2>Your turn</h2><p>'+(s.p||"")+'</p>'+(uses.length?'<p class="uses">Practises: '+uses.join("")+'</p>':'')+'</div></div>'+
-      '<div class="practice"><div class="h">Practice terminal <span>sunrise-app</span></div><div class="lab"><div id="'+s.id+'"></div><div class="goals" id="g_'+s.id+'"></div></div></div><div class="done-banner" data-for="'+s.id+'">All tasks complete. Well done, move on when ready.</div>';
+    return h+'<div class="tryintro"><div><h2>'+(s.opt?'Explore it yourself':'Your turn')+'</h2><p>'+(s.p||"")+'</p>'+(uses.length?'<p class="uses">Practises: '+uses.join("")+'</p>':'')+'</div></div>'+
+      '<div class="practice"><div class="h">Practice terminal <span>sunrise-app</span></div><div class="lab"><div id="'+s.id+'"></div><div class="goals" id="g_'+s.id+'"></div></div></div><div class="done-banner" data-for="'+s.id+'">'+(s.opt?'Done. This section is optional, so continue whenever you like.':'All tasks complete. Well done, move on when ready.')+'</div>';
   }
   if(s.k==="check") return h+'<h2>Quick check</h2><div class="chk" data-ch="'+L.n+'" data-k="'+s.n+'"></div>';
   if(s.k==="trap"){
@@ -882,7 +893,7 @@ function stepHTML(s,L,i){
     var nx=LESSONS[LESSONS.indexOf(L)+1];
     return h+'<h2>What you can do now</h2><div class="recap" style="--rc:'+sc(L)+'"><ol>'+s.pts.map(function(p){return "<li>"+p+"</li>";}).join("")+'</ol>'+
       '<div><div class="kit"><h3>Your toolkit from this module</h3><div class="chips">'+s.cmds.map(function(c){return "<span>"+esc(c)+"</span>";}).join("")+'</div></div>'+
-      '<div class="nextm">'+(nx?'<a class="btn lg" href="#/m/'+nx.id+'">Next: '+nx.t+' &rarr;</a>':'<a class="btn lg" href="#/labs">Go to '+LABS[DAY][2]+' &rarr;</a>')+'<a class="btn ghost lg" href="#/">Course map</a></div></div></div>';
+      (L.steps.some(function(z){return z.k==="more";})?'<p class="xpnote">Optional extras for this module are on the next steps: <b>'+L.steps.filter(function(z){return z.k==="more";}).map(function(z){return z.h.replace(/<[^>]+>/g,"");}).join(", ")+'</b>.</p>':'')+'<div class="nextm">'+(nx?'<a class="btn lg" href="#/m/'+nx.id+'">Next: '+nx.t+' &rarr;</a>':'<a class="btn lg" href="#/labs">Go to '+LABS[DAY][2]+' &rarr;</a>')+'<a class="btn ghost lg" href="#/">Course map</a></div></div></div>';
   }
   if(s.k==="wid") return h+'<h2>'+s.h+'</h2>'+(s.p?'<p>'+s.p+'</p>':'')+'<div style="margin-top:14px">'+s.html+'</div>';
   return "";
@@ -925,9 +936,10 @@ function labsHTML(){
 function cheatData(){
   var out=[];
   LESSONS.forEach(function(L){L.steps.forEach(function(s){
-    if(s.k!=="cmd") return;
-    (s.rows||[]).forEach(function(r){out.push([r[0],r[1],L.n,L.t]);});
-    (s.opts||[]).forEach(function(r){out.push([s.syn?s.syn[0][0]+" "+r[0]:r[0],r[1],L.n,L.t]);});
+    if(s.k!=="cmd"&&s.k!=="more") return;
+    var xp=s.k==="more"?" (explore)":"";
+    (s.rows||[]).forEach(function(r){out.push([r[0],r[1]+xp,L.n,L.t]);});
+    (s.opts||[]).forEach(function(r){out.push([s.syn?s.syn[0][0]+" "+r[0]:r[0],r[1]+xp,L.n,L.t]);});
   });});
   return (window.__PREVCHEAT__||[]).concat(out);
 }
@@ -2583,7 +2595,8 @@ function seedProcs(){
     {pid:655,user:"www-data",ppid:1,cmd:"nginx: worker process",tty:"?",st:"09:00",tm:"00:00:01"},
     {pid:701,user:"root",ppid:1,cmd:"/usr/sbin/cron -f",tty:"?",st:"09:00",tm:"00:00:00"},
     {pid:1204,user:"student",ppid:412,cmd:"-bash",tty:"pts/0",st:"09:05",tm:"00:00:00"},
-    {pid:2890,user:"student",ppid:1204,cmd:"python3 report.py",tty:"pts/0",st:"10:38",tm:"01:52:10",c:97}
+    {pid:2890,user:"student",ppid:1204,cmd:"python3 report.py",tty:"pts/0",st:"10:38",tm:"01:52:10",c:97},
+    {pid:3010,user:"student",ppid:1204,cmd:"stuck_sync",tty:"pts/0",st:"11:20",tm:"00:00:03",stubborn:true}
   ];
 }
 CMDS.ps=function(T,a){
@@ -2665,6 +2678,31 @@ CMDS.getfacl=function(T,a){
   T.used.getfacl=1;return out.join("\n")+(out.length?"\n":"");
 };
 
+/* ----- kill: a stubborn process ignores the polite signal (SIGTERM) and only dies with kill -9 ----- */
+(function(){var base=CMDS.kill;CMDS.kill=function(T,a){
+  var nine=a.some(function(x){return /^-(9|KILL|SIGKILL)$/.test(x);});
+  if(nine) return base(T,a);
+  var hold=[],rest=[];
+  a.forEach(function(x){
+    var p=x.charAt(0)!=="-"&&x.charAt(0)!=="%"?T.procs.filter(function(y){return String(y.pid)===x;})[0]:null;
+    if(p&&p.stubborn&&(p.user===T.user||T.user==="root")) hold.push(p); else rest.push(x);
+  });
+  if(!hold.length) return base(T,a);
+  T.used.kill=1;T.used.killsoft=1;
+  if(rest.filter(function(x){return x.charAt(0)!=="-";}).length) return base(T,rest);
+  return "";
+};})();
+/* ----- top: busiest process first, command names as the real top shows them ----- */
+CMDS.top=function(T){
+  T.used.top=1;
+  function nm(p){return p.cmd.split(" ")[0].replace(/^-/,"").replace(/:$/,"").split("/").pop();}
+  function cpu(p){return p.c?p.c:(p.pid===2890?97:0.3);}
+  var r=["top - 10:30:00 up 3 days,  2 users,  load average: 0.97, 0.88, 0.75","Tasks: "+(T.procs.length+1)+" total,   2 running, "+(T.procs.length-1)+" sleeping","%Cpu(s): 98.0 us,  1.0 sy,  0.0 ni,  1.0 id","MiB Mem :   3900.0 total,   1950.0 free,   1130.0 used","","    PID USER      %CPU %MEM COMMAND"];
+  T.procs.slice().sort(function(a,b){return cpu(b)-cpu(a)||a.pid-b.pid;}).forEach(function(p){r.push(String(p.pid).padStart(7)+" "+p.user.padEnd(9).slice(0,9)+" "+(cpu(p)>=1?cpu(p).toFixed(1):"0.3").padStart(5)+"  "+(p.pid===2890?"2.1":"0.4").padStart(4)+" "+nm(p));});
+  r.push("","(simulated snapshot: in a real terminal top keeps updating. Press q to quit.)");
+  return r.join("\n")+"\n";
+};
+
 /* ---------- task panel: goal first, then hint, then answer ---------- */
 function mountLab(termId,goalsId,goals,allow,extra){
   extra=extra||{};
@@ -2737,12 +2775,14 @@ var A7=["pwd","whoami","ls","cd","cat","echo","type","which","alias","history","
 var A8=A7.concat(["mkdir","touch","wc","grep","head","tail"]);
 var A9=A8.concat(["cp","mv","rm","rmdir","find","du"]);
 var AC=A9.concat(["cmp","diff","tar","zip","unzip"]);
-var AP=A9.concat(["ps","top","sleep","jobs","bg","fg","kill","df","free"]);
+var AP=A9.concat(["ps","top","kill","df","free"]);
 var A11=A9.concat(["chmod","umask"]);
 var A12=AC.concat(["chmod","sudo","exit","adduser","useradd","userdel","groupadd","groupdel","usermod","gpasswd","getent","id","groups","su","passwd"]);
 var A13=A12.concat(["chown","chgrp","setfacl","getfacl","tee"]);
 var A14=A13.concat(["ln"]);
 var A15=A14.concat(["sort","uniq","cut","awk"]);
+var AT=AC.concat(["sort","uniq","cut","awk"]);
+var A4L=A14.concat(["umask"]);
 
 /* ================= DAY 1 practice ================= */
 lab("t1",[
@@ -2964,10 +3004,12 @@ function go(L,i){
   store.set("lf3-last-"+DAY,{id:L.id,i:i});
   $$(".rail button",root).forEach(function(b){var j=+b.getAttribute("data-i");b.classList.toggle("on",j===i);b.classList.toggle("seen",seen.indexOf(j)>-1);
     $("i",b).style.background=j===i?sc(L):(seen.indexOf(j)>-1?"":"");});
-  $(".mid",root).textContent="Step "+(i+1)+" of "+n+"  ·  "+KIND[L.steps[i].k][0];
+  var mn=mainN(L);
+  $(".mid",root).textContent=(i<mn?"Step "+(i+1)+" of "+mn:"Explore "+(i-mn+1)+" of "+(n-mn))+"  ·  "+kindOf(L.steps[i])[0];
   $(".pv",root).disabled=i===0;
   var nxL=LESSONS[LESSONS.indexOf(L)+1];
-  $(".nx",root).innerHTML=i<n-1?"Next &rarr;":(nxL?"Next module &rarr;":LABS[DAY][2]+" &rarr;");
+  $(".nx",root).innerHTML=(i===mn-1&&n>mn)?"Explore (optional) &rarr;":(i<n-1?"Next &rarr;":(nxL?"Next module &rarr;":LABS[DAY][2]+" &rarr;"));
+  $$(".rail button",root).forEach(function(b){b.classList.toggle("xp",+b.getAttribute("data-i")>=mn);});
   try{history.replaceState(null,"","#/m/"+L.id+"/"+i);}catch(e){}
   window.scrollTo(0,0);
 }
@@ -2982,7 +3024,7 @@ LESSONS.forEach(function(L){
 });
 function paintHome(){
   $$("#home .mod").forEach(function(a){
-    var L=lessonById(a.getAttribute("data-id")),s=seenN(L),n=L.steps.length,pct=Math.round(s/n*100);
+    var L=lessonById(a.getAttribute("data-id")),s=seenN(L),n=mainN(L),pct=Math.round(s/n*100);
     $(".pg b",a).style.width=pct+"%";
     $(".pg span",a).textContent=s===0?n+" steps":(s>=n?"Completed":s+" of "+n+" steps");
     a.classList.toggle("done",s>=n);
@@ -3025,7 +3067,7 @@ route();
   function setup(){
     clearInterval(timer);
     var today=QS.filter(function(x){return (window.__TODAY__||[]).indexOf(x.ch)>-1;}).length;
-    var opts='<option value="-1">Today\'s modules ('+today+' questions)</option><option value="0">Everything so far ('+QS.length+')</option>'+Object.keys(CHN).sort(function(a,b){return a-b;}).map(function(k){
+    var opts='<option value="-1">Today\'s modules ('+today+' questions)</option><option value="0">Everything so far ('+QS.filter(function(x){return x.ch!==200;}).length+')</option>'+Object.keys(CHN).sort(function(a,b){return a-b;}).map(function(k){
       var n=QS.filter(function(x){return x.ch==k;}).length;return '<option value="'+k+'">'+CHN[k]+' ('+n+')</option>';}).join("");
     app.innerHTML='<div class="qz-setup"><p style="margin:0">Choose a mode. <b>Practice</b> shows the answer and an explanation after every question. <b>Test</b> hides the answers until you submit, runs a timer and gives a chapter-wise result.</p>'+
      '<div class="row"><label>Mode <select id="qzMode"><option value="practice">Practice</option><option value="test">Test (timed)</option></select></label>'+
@@ -3035,7 +3077,7 @@ route();
      '<div class="row"><label><input type="checkbox" id="qzNeg"> Negative marking (minus 0.25 per wrong answer)</label></div>'+
      '<button class="btn" id="qzGo" type="button">Start</button></div>';
     $("#qzGo").addEventListener("click",function(){
-      var ch=+$("#qzCh").value,n=+$("#qzN").value,st=$("#qzSt").value,pool=QS.filter(function(x){return (ch===0||(ch===-1?(window.__TODAY__||[]).indexOf(x.ch)>-1:x.ch===ch))&&(st==="all"||(st==="long")===!!x.long);});
+      var ch=+$("#qzCh").value,n=+$("#qzN").value,st=$("#qzSt").value,pool=QS.filter(function(x){return (ch===0?x.ch!==200:(ch===-1?(window.__TODAY__||[]).indexOf(x.ch)>-1:x.ch===ch))&&(st==="all"||(st==="long")===!!x.long);});
       if(!pool.length){window.alert("No questions match this selection.");return;}
       var qs=shuffle(pool).slice(0,n).map(function(x){
         var idx=shuffle(x.opts.map(function(_,i){return i;}));
